@@ -9,6 +9,7 @@
     "postinstall": "prisma generate || true"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.2",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest"

@@ -1,0 +1,248 @@
+-- step 1
+
+# Make a folder
+mkdir cold-press-pharmacy && cd cold-press-pharmacy
+
+# Initialize git
+git init
+echo "node_modules
+.env
+.next
+" > .gitignore
+
+# Node project + Next.js
+npm init -y
+npm install next@latest react react-dom
+npx next telemetry disable
+
+
+-- after npm
+
+mkdir app public
+cat > next.config.js <<'EOF'
+/** @type {import('next').NextConfig} */
+const nextConfig = { reactStrictMode: true };
+module.exports = nextConfig;
+EOF
+
+cat > package.json <<'EOF'
+{
+  "name": "cold-press-pharmacy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "postinstall": "prisma generate || true"
+  },
+  "dependencies": {
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  }
+}
+EOF
+
+cat > app/page.jsx <<'EOF'
+export default function Home() {
+  return (
+    <main style={{padding:"2rem", fontFamily:"ui-sans-serif"}}>
+      <h1>Cold Press Pharmacy</h1>
+      <p>Nutrition you can feel. Data you can trust.</p>
+    </main>
+  );
+}
+EOF
+
+
+-- test
+npm run dev
+# open http://localhost:3000
+
+-- commit to git
+
+git add .
+git commit -m "chore: boot Next app"
+
+-- create git app
+git remote add origin https://github.com/shaedygirl/cold-press-pharmacy.git
+git branch -M main
+git push -u origin main
+
+-- create free supabase
+npm install @supabase/supabase-js
+echo "NEXT_PUBLIC_SUPABASE_URL=https://zxkbwjxlnscealmkycpk.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable__tlQ_JxmeIGQtlXF2q7VmQ_3LNItFyg
+DATABASE_URL=postgresql://postgres.zxkbwjxlnscealmkycpk:tudziJ-jamvym-bakxy7@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+" > .env
+
+-- minimal helper
+
+mkdir lib
+cat > lib/supabaseClient.js <<'EOF'
+import { createClient } from '@supabase/supabase-js';
+export const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+EOF
+
+
+NEXT_PUBLIC_SUPABASE_URL=https://zxkbwjxlnscealmkycpk.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable__tlQ_JxmeIGQtlXF2q7VmQ_3LNItFyg
+
+
+-- create tables in supabase
+
+-- protocols users will actually see
+create table if not exists protocols (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text,
+  created_at timestamptz default now()
+);
+
+-- ingredients catalog (can map to USDA later)
+create table if not exists ingredients (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  unit text default 'g',
+  kcal_per_100g numeric,
+  protein_g_per_100g numeric,
+  fiber_g_per_100g numeric
+);
+
+-- junction: protocol ↔ ingredients with amounts
+create table if not exists protocol_items (
+  id uuid primary key default gen_random_uuid(),
+  protocol_id uuid references protocols(id) on delete cascade,
+  ingredient_id uuid references ingredients(id) on delete restrict,
+  amount numeric not null -- grams
+);
+
+
+-- test route
+
+mkdir -p app/api/protocols/route
+cat > app/api/protocols/route.js <<'EOF'
+import { supabase } from "@/lib/supabaseClient";
+
+export async function GET() {
+  const { data, error } = await supabase.from("protocols").select("*").order("created_at", {ascending:false});
+  if (error) return new Response(JSON.stringify({error:error.message}), {status:500});
+  return new Response(JSON.stringify(data), {status:200});
+}
+
+export async function POST(req) {
+  const body = await req.json();
+  const { data, error } = await supabase.from("protocols").insert({ name: body.name, description: body.description }).select();
+  if (error) return new Response(JSON.stringify({error:error.message}), {status:500});
+  return new Response(JSON.stringify(data[0]), {status:201});
+}
+EOF
+
+-- add client page to test api
+
+cat > app/protocols/page.jsx <<'EOF'
+async function getProtocols() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/protocols`, { cache: "no-store" });
+  return res.json();
+}
+export default async function ProtocolsPage() {
+  const protocols = await getProtocols();
+  return (
+    <main style={{padding:"2rem", fontFamily:"ui-sans-serif"}}>
+      <h2>Protocols</h2>
+      <ul>
+        {Array.isArray(protocols) && protocols.map(p => (
+          <li key={p.id}><strong>{p.name}</strong>{p.description ? ` — ${p.description}` : ""}</li>
+        ))}
+      </ul>
+    </main>
+  );
+}
+EOF
+
+-- run locally
+
+npm run dev
+# try http://localhost:3000/protocols
+
+-- save
+
+git add .
+git commit -m "feat: supabase client + protocols API and page"
+git push
+
+-- prisma for nicer models
+
+npm install -D prisma
+npm install @prisma/client
+npx prisma init
+
+-- .env must have a full DATABASE_URL from Supabase (Settings → Database). Then:
+
+
+cat > prisma/schema.prisma <<'EOF'
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+
+model Protocol {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  created_at  DateTime      @default(now())
+  items       ProtocolItem[]
+}
+
+model Ingredient {
+  id        String        @id @default(uuid())
+  name      String
+  unit      String        @default("g")
+  kcal_100  Float?
+  protein_100 Float?
+  fiber_100 Float?
+  items     ProtocolItem[]
+}
+
+model ProtocolItem {
+  id            String     @id @default(uuid())
+  amount        Float
+  protocol_id   String
+  ingredient_id String
+  protocol      Protocol   @relation(fields: [protocol_id], references: [id], onDelete: Cascade)
+  ingredient    Ingredient @relation(fields: [ingredient_id], references: [id])
+}
+EOF
+
+npx prisma db push
+
+-- use in route
+
+// app/api/protocols/route.js
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
+
+export async function GET() {
+  const rows = await prisma.protocol.findMany({ orderBy: { created_at: 'desc' }});
+  return new Response(JSON.stringify(rows), {status:200});
+}
+
+----
+
+4) Deploy with GitHub → Vercel
+	1.	vercel.com → New Project → import your GitHub repo.
+	2.	Add environment variables in Vercel:
+	•	NEXT_PUBLIC_SUPABASE_URL
+	•	NEXT_PUBLIC_SUPABASE_ANON_KEY
+	•	DATABASE_URL (if using Prisma)
+	•	NEXT_PUBLIC_BASE_URL (set later to your deployed URL if needed)
+	3.	Deploy → Vercel builds and gives you a live URL.
+	4.	Every git push to main will auto-deploy.
+
+
+		•	npm run dev in VS Code (Live reload)
+	•	Edit app/page.jsx, app/protocols/page.jsx, and small components
+	•	Add rows in Supabase GUI → refresh page → instant data
+	•	Commit small passes → push → Vercel updates
