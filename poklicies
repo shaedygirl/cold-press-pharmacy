@@ -1,0 +1,97 @@
+-- anyone (anon) can read lists/details
+create policy "public read protocols"
+  on public.protocols
+  for select
+  using (true);
+
+create policy "public read ingredients"
+  on public.ingredients
+  for select
+  using (true);
+
+create policy "public read protocol_items"
+  on public.protocol_items
+  for select
+  using (true);
+
+  create policy "service writes protocols"
+  on public.protocols
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
+create policy "service writes ingredients"
+  on public.ingredients
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
+create policy "service writes protocol_items"
+  on public.protocol_items
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
+  -- example: only the row owner (created_by) can update/delete; everyone can read
+-- (assumes a created_by uuid column storing auth.uid())
+create policy "owner can modify protocol"
+  on public.protocols
+  for update using (created_by = auth.uid())
+  with check (created_by = auth.uid());
+
+create policy "owner can delete protocol"
+  on public.protocols
+  for delete using (created_by = auth.uid());
+
+
+  -- === Enable RLS on your public tables ===
+alter table public.ingredient            enable row level security;
+alter table public.ingredient_nutrient   enable row level security;
+alter table public.juice                 enable row level security;
+alter table public.juice_ingredient      enable row level security;
+alter table public.juice_tag             enable row level security;
+alter table public.nutrient              enable row level security;
+alter table public.tag                   enable row level security;
+alter table public.unit_conversion       enable row level security;
+alter table public.clinician_review      enable row level security;
+
+-- Staging / summary tables (enable if you plan to expose them via API):
+alter table public.s_ingredient              enable row level security;
+alter table public.s_ingredient_nutrient     enable row level security;
+alter table public.s_ingredient_usda_map     enable row level security;
+alter table public.s_nutrient                enable row level security;
+
+-- Materialized/report views usually don’t need RLS; if they're tables, enable as needed:
+-- alter table public.m_juice_label_rows   enable row level security;
+-- alter table public.m_juice_label_wide   enable row level security;
+
+-- === Public READ policies (anon can SELECT) ===
+create policy "public read ingredient"          on public.ingredient          for select using (true);
+create policy "public read ingredient_nutrient" on public.ingredient_nutrient for select using (true);
+create policy "public read juice"               on public.juice               for select using (true);
+create policy "public read juice_ingredient"    on public.juice_ingredient    for select using (true);
+create policy "public read juice_tag"           on public.juice_tag           for select using (true);
+create policy "public read nutrient"            on public.nutrient            for select using (true);
+create policy "public read tag"                 on public.tag                 for select using (true);
+create policy "public read unit_conversion"     on public.unit_conversion     for select using (true);
+create policy "public read clinician_review"    on public.clinician_review    for select using (true);
+
+-- Staging tables (only if you intend to expose them publicly; otherwise omit these):
+-- create policy "public read s_ingredient"              on public.s_ingredient              for select using (true);
+-- create policy "public read s_ingredient_nutrient"     on public.s_ingredient_nutrient     for select using (true);
+-- create policy "public read s_ingredient_usda_map"     on public.s_ingredient_usda_map     for select using (true);
+-- create policy "public read s_nutrient"                on public.s_nutrient                for select using (true);
+
+-- === Service-role WRITE policies (server-only writes via service key) ===
+create policy "service writes ingredient"          on public.ingredient          for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes ingredient_nutrient" on public.ingredient_nutrient for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes juice"               on public.juice               for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes juice_ingredient"    on public.juice_ingredient    for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes juice_tag"           on public.juice_tag           for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes nutrient"            on public.nutrient            for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes tag"                 on public.tag                 for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes unit_conversion"     on public.unit_conversion     for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+create policy "service writes clinician_review"    on public.clinician_review    for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Make PostgREST pick up changes immediately
+select pg_notify('pgrst', 'reload schema');

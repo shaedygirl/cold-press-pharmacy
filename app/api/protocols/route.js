@@ -1,4 +1,5 @@
-import { supabase } from "@/lib/supabaseClient";
+// instead of "@/lib/supabaseClient"
+import { supabase } from "../../../lib/supabaseClient";
 
 export async function GET() {
   const { data, error } = await supabase.from("protocols").select("*").order("created_at", {ascending:false});
