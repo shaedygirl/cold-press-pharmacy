@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "postgresql"
+  url          = env("DATABASE_URL")
+  relationMode = "foreignKeys"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clinician_review {
+  id          Int     @id
+  juice_id    Int
+  reviewer    String
+  role        String?
+  verdict     String
+  notes       String?
+  reviewed_at String? @default(dbgenerated("CURRENT_TIMESTAMP"))
+  juice       juice   @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model ingredient {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique
+  density_g_ml        Float?                @db.Real
+  notes               String?
+  default_juice_yield Float?                @db.Real
+  ingredient_nutrient ingredient_nutrient[]
+  juice_ingredient    juice_ingredient[]
+
+  @@index([name], map: "idx_ing_name")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingredient_nutrient {
+  ingredient_id   Int
+  nutrient_id     Int
+  amount_per_100g Float      @db.Real
+  source          String?
+  source_ref      String?
+  ingredient      ingredient @relation(fields: [ingredient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  nutrient        nutrient   @relation(fields: [nutrient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([ingredient_id, nutrient_id])
+  @@unique([ingredient_id, nutrient_id], map: "uq_ingnut")
+  @@index([ingredient_id], map: "idx_ingnut_ing")
+  @@index([nutrient_id], map: "idx_ingnut_nut")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  type             String
+  description      String?
+  servings         Float?             @default(1.0) @db.Real
+  created_at       String?            @default(dbgenerated("CURRENT_TIMESTAMP"))
+  clinician_review clinician_review[]
+  juice_ingredient juice_ingredient[]
+  juice_tag        juice_tag[]
+
+  @@index([name], map: "idx_juice_name")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice_ingredient {
+  juice_id       Int
+  ingredient_id  Int
+  qty            Float      @db.Real
+  unit           String
+  prep           String?
+  yield_fraction Float?     @db.Real
+  ingredient     ingredient @relation(fields: [ingredient_id], references: [id], onUpdate: NoAction)
+  juice          juice      @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([juice_id, ingredient_id])
+  @@index([ingredient_id], map: "idx_jing_ing")
+  @@index([juice_id], map: "idx_jing_juice")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice_tag {
+  juice_id Int
+  tag_id   Int
+  juice    juice @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag      tag   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([juice_id, tag_id])
+  @@index([juice_id], map: "idx_jtag_juice")
+  @@index([tag_id], map: "idx_jtag_tag")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model m_juice_label_rows {
+  juice_id           Int?
+  juice              String?
+  nutrient_code      String?
+  nutrient           String?
+  unit               String?
+  amount_per_serving Float?  @db.Real
+  sort_key           Int?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model m_juice_label_wide {
+  juice_id      Int?
+  juice         String?
+  kcal          Float?  @db.Real
+  protein_g     Float?  @db.Real
+  fiber_g       Float?  @db.Real
+  vitamin_c_mg  Float?  @db.Real
+  vitamin_k1_ug Float?  @db.Real
+  iron_mg       Float?  @db.Real
+  folate_ug     Float?  @db.Real
+  potassium_mg  Float?  @db.Real
+  magnesium_mg  Float?  @db.Real
+  sodium_mg     Float?  @db.Real
+
+  @@ignore
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model nutrient {
+  id                  Int                   @id
+  code                String                @unique
+  name                String
+  unit                String
+  rda_unit            String?
+  rda_amount          Float?                @db.Real
+  ingredient_nutrient ingredient_nutrient[]
+
+  @@index([code], map: "idx_nutr_code")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model s_ingredient {
+  id                  Int?
+  name                String?
+  density_g_ml        Float?  @db.Real
+  notes               String?
+  default_juice_yield Float?  @db.Real
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model s_ingredient_nutrient {
+  ingredient_id   Int?
+  nutrient_id     Int?
+  amount_per_100g Decimal? @db.Decimal
+  unit            String?
+  source          String?
+  source_ref      String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model s_ingredient_usda_map {
+  ingredient_id Int?
+  fdc_id        BigInt?
+  confidence    Decimal? @db.Decimal
+  notes         String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model s_nutrient {
+  id         Int?
+  code       String?
+  name       String?
+  unit       String?
+  rda_unit   String?
+  rda_amount Float?  @db.Real
+
+  @@ignore
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tag {
+  id        Int         @id
+  slug      String      @unique
+  label     String
+  juice_tag juice_tag[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model unit_conversion {
+  from_unit String @unique
+  to_unit   String
+  factor    Float  @db.Real
+
+  @@unique([from_unit, to_unit])
+}

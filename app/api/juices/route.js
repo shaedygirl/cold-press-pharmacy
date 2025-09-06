@@ -1,14 +1,13 @@
-// If you set up the @ alias; otherwise use a relative import to ../lib
-import { supabase } from "../../../lib/supabaseClient";
+import { prisma } from "../../../lib/prisma";
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("juice")
-    .select("id, name")              // add more columns as needed
-    .order("id", { ascending: true });
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  try {
+    const juices = await prisma.juice.findMany({
+      orderBy: { id: "asc" },
+      select: { id: true, name: true },
+    });
+    return new Response(JSON.stringify(juices), { status: 200 });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500 });
   }
-  return new Response(JSON.stringify(data || []), { status: 200 });
 }

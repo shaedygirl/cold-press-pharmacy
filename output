@@ -1,0 +1,148 @@
+shae@Shaes-MacBook-Pro-2 cold-press-pharmacy % npx prisma -v
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+prisma                  : 6.15.0
+@prisma/client          : 6.15.0
+Computed binaryTarget   : darwin-arm64
+Operating System        : darwin
+Architecture            : arm64
+Node.js                 : v22.19.0
+TypeScript              : unknown
+Query Engine (Node-API) : libquery-engine 85179d7826409ee107a6ba334b5e305ae3fba9fb (at node_modules/@prisma/engines/libquery_engine-darwin-arm64.dylib.node)
+PSL                     : @prisma/prisma-schema-wasm 6.15.0-5.85179d7826409ee107a6ba334b5e305ae3fba9fb
+Schema Engine           : schema-engine-cli 85179d7826409ee107a6ba334b5e305ae3fba9fb (at node_modules/@prisma/engines/schema-engine-darwin-arm64)
+Default Engines Hash    : 85179d7826409ee107a6ba334b5e305ae3fba9fb
+Studio                  : 0.511.0
+
+shae@Shaes-MacBook-Pro-2 cold-press-pharmacy % cat prisma/schema.prisma | sed -n '1,100p'
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model clinician_review {
+  id          Int     @id
+  juice_id    Int
+  reviewer    String
+  role        String?
+  verdict     String
+  notes       String?
+  reviewed_at String? @default(dbgenerated("CURRENT_TIMESTAMP"))
+  juice       juice   @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model ingredient {
+  id                  Int                   @id @default(autoincrement())
+  name                String                @unique
+  density_g_ml        Float?                @db.Real
+  notes               String?
+  default_juice_yield Float?                @db.Real
+  ingredient_nutrient ingredient_nutrient[]
+  juice_ingredient    juice_ingredient[]
+
+  @@index([name], map: "idx_ing_name")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ingredient_nutrient {
+  ingredient_id   Int
+  nutrient_id     Int
+  amount_per_100g Float      @db.Real
+  source          String?
+  source_ref      String?
+  ingredient      ingredient @relation(fields: [ingredient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  nutrient        nutrient   @relation(fields: [nutrient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([ingredient_id, nutrient_id])
+  @@unique([ingredient_id, nutrient_id], map: "uq_ingnut")
+  @@index([ingredient_id], map: "idx_ingnut_ing")
+  @@index([nutrient_id], map: "idx_ingnut_nut")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice {
+  id               Int                @id @default(autoincrement())
+  name             String             @unique
+  type             String
+  description      String?
+  servings         Float?             @default(1.0) @db.Real
+  created_at       String?            @default(dbgenerated("CURRENT_TIMESTAMP"))
+  clinician_review clinician_review[]
+  juice_ingredient juice_ingredient[]
+  juice_tag        juice_tag[]
+
+  @@index([name], map: "idx_juice_name")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice_ingredient {
+  juice_id       Int
+  ingredient_id  Int
+  qty            Float      @db.Real
+  unit           String
+  prep           String?
+  yield_fraction Float?     @db.Real
+  ingredient     ingredient @relation(fields: [ingredient_id], references: [id], onUpdate: NoAction)
+  juice          juice      @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([juice_id, ingredient_id])
+  @@index([ingredient_id], map: "idx_jing_ing")
+  @@index([juice_id], map: "idx_jing_juice")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model juice_tag {
+  juice_id Int
+  tag_id   Int
+  juice    juice @relation(fields: [juice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tag      tag   @relation(fields: [tag_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([juice_id, tag_id])
+  @@index([juice_id], map: "idx_jtag_juice")
+  @@index([tag_id], map: "idx_jtag_tag")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model m_juice_label_rows {
+  juice_id           Int?
+
+shae@Shaes-MacBook-Pro-2 cold-press-pharmacy % echo $DATABASE_URL
+
+shae@Shaes-MacBook-Pro-2 cold-press-pharmacy % 
+
+shae@Shaes-MacBook-Pro-2 cold-press-pharmacy % ls -la node_modules/@prisma/client
+total 184
+drwxr-xr-x  24 shae  staff    768 Sep  5 22:36 .
+drwxr-xr-x   9 shae  staff    288 Sep  5 22:36 ..
+-rw-r--r--   1 shae  staff     39 Sep  5 22:35 default.d.ts
+-rw-r--r--   1 shae  staff     61 Sep  5 22:35 default.js
+-rw-r--r--   1 shae  staff     36 Sep  5 22:35 edge.d.ts
+-rw-r--r--   1 shae  staff    107 Sep  5 22:35 edge.js
+-rw-r--r--   1 shae  staff     40 Sep  5 22:35 extension.d.ts
+-rw-r--r--   1 shae  staff    111 Sep  5 22:35 extension.js
+drwxr-xr-x   3 shae  staff     96 Sep  5 22:35 generator-build
+-rw-r--r--   1 shae  staff     80 Sep  5 22:35 index-browser.js
+-rw-r--r--   1 shae  staff     39 Sep  5 22:35 index.d.ts
+-rw-r--r--   1 shae  staff    110 Sep  5 22:35 index.js
+-rw-r--r--   1 shae  staff  11357 Sep  5 22:35 LICENSE
+-rw-r--r--   1 shae  staff  10153 Sep  5 22:35 package.json
+-rw-r--r--   1 shae  staff     44 Sep  5 22:35 react-native.d.ts
+-rw-r--r--   1 shae  staff     66 Sep  5 22:35 react-native.js
+-rw-r--r--   1 shae  staff   2553 Sep  5 22:35 README.md
+drwxr-xr-x  80 shae  staff   2560 Sep  5 22:36 runtime
+drwxr-xr-x   7 shae  staff    224 Sep  5 22:35 scripts
+-rw-r--r--   1 shae  staff     35 Sep  5 22:35 sql.d.ts
+-rw-r--r--   1 shae  staff     70 Sep  5 22:35 sql.js
+-rw-r--r--   1 shae  staff     51 Sep  5 22:35 sql.mjs
+-rw-r--r--   1 shae  staff     36 Sep  5 22:35 wasm.d.ts
+-rw-r--r--   1 shae  staff    107 Sep  5 22:35 wasm.js
