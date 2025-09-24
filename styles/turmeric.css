@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
+
+:root {
+  --turmeric: #d4a017;
+  --turmeric-bright: #e7ba39;
+  --turmeric-soft: rgba(255, 198, 87, 0.35);
+  --turmeric-paper: #fff9ec;
+}
+
+.bg-turmeric-paper {
+  background: var(--turmeric-paper);
+}
+
+.turmeric-title {
+  font-family: 'Sacramento', cursive;
+  font-size: clamp(52px, 9vw, 96px);
+  background: linear-gradient(45deg, var(--turmeric), var(--turmeric-bright), #ffd266, var(--turmeric));
+  background-size: 240% 240%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transition: filter 0.3s ease, text-shadow 0.3s ease;
+}
+
+.turmeric-title.active {
+  animation: turmericGlow 6s linear infinite;
+  text-shadow: 0 0 18px rgba(255, 210, 102, 0.7);
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.08));
+}
+
+@keyframes turmericGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.turmeric-input {
+  border: 1.5px solid rgba(212, 160, 23, 0.55);
+  caret-color: var(--turmeric);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.turmeric-input:focus {
+  border-color: var(--turmeric-bright);
+  box-shadow: 0 0 0 4px rgba(231, 186, 57, 0.22);
+}
+
+.text-turmeric {
+  color: var(--turmeric);
+}
+
+.text-turmeric-bright {
+  color: var(--turmeric-bright);
+}
+
+.turmeric-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  z-index: 5;
+  backdrop-filter: blur(2px);
+}
+
+.turmeric-overlay.active {
+  opacity: 1;
+}
+
+.turmeric-panel {
+  position: relative;
+  z-index: 10;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.turmeric-scroll {
+  overflow-y: auto;
+  max-height: 18rem;
+  padding: 0.5rem 0;
+}
+
+.turmeric-options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.turmeric-option {
+  display: block;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.turmeric-option:hover,
+.turmeric-option:focus-visible {
+  background: rgba(255, 214, 102, 0.18);
+}
+
+.turmeric-option.is-active {
+  background: rgba(255, 214, 102, 0.28);
+  box-shadow: inset 0 0 0 2px rgba(231, 186, 57, 0.4);
+}
+
+.turmeric-option + .turmeric-option {
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.turmeric-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(240, 240, 240, 0.85);
+}
+
+.turmeric-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: turmericShimmer 1.1s infinite;
+}
+
+@keyframes turmericShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.turmeric-highlight {
+  position: relative;
+  font-weight: 600;
+}
+
+.turmeric-highlight::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 0;
+  height: 0.55em;
+  background: linear-gradient(0deg, var(--turmeric-soft), rgba(255, 198, 87, 0));
+  border-radius: 6px;
+  z-index: -1;
+}
+
+.turmeric-kbd-gradient {
+  background: linear-gradient(180deg, #fdfdfd 0%, #f1f1f1 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turmeric-title.active,
+  .turmeric-skeleton::after {
+    animation: none !important;
+  }
+  .turmeric-overlay,
+  .turmeric-input {
+    transition: none !important;
+  }
+}
