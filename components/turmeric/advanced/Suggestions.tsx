@@ -3,11 +3,13 @@
 import { Fragment, useMemo } from 'react';
 import { AlertTriangle, Inbox } from 'lucide-react';
 import ScrollArea from '@/components/ui/scroll-area';
+import ShimmerList from '@/components/turmeric/advanced/ShimmerList';
 import type { Suggestion, SearchStatus } from '@/lib/turmeric/types';
 
 type SuggestionsProps = {
   id: string;
   labelledBy: string;
+  showShimmer: boolean;
   status: SearchStatus;
   suggestions: Suggestion[];
   activeIndex: number;
@@ -17,11 +19,12 @@ type SuggestionsProps = {
   onSelect: (index: number) => void;
 };
 
-const shimmerPlaceholders = Array.from({ length: 5 });
+const SHIMMER_COUNT = 1;
 
 export default function Suggestions({
   id,
   labelledBy,
+  showShimmer,
   status,
   suggestions,
   activeIndex,
@@ -30,8 +33,9 @@ export default function Suggestions({
   onHover,
   onSelect,
 }: SuggestionsProps) {
-  const isEmpty = status === 'empty';
-  const isError = status === 'error';
+  const isLoading = showShimmer;
+  const isEmpty = !isLoading && status === 'empty';
+  const isError = !isLoading && status === 'error';
 
   const highlight = useMemo(() => createHighlighter(query), [query]);
 
@@ -40,13 +44,12 @@ export default function Suggestions({
       id={id}
       role="listbox"
       aria-labelledby={labelledBy}
+      aria-busy={isLoading}
       className="turmeric-panel mt-1 w-full shadow-2xl"
     >
-      {status === 'loading' && (
-        <div className="space-y-2 px-2 py-3" aria-live="polite">
-          {shimmerPlaceholders.map((_, index) => (
-            <div key={index} className="turmeric-skeleton h-14 rounded-xl" />
-          ))}
+      {isLoading && (
+        <div className="px-2 py-3" aria-live="polite">
+          <ShimmerList count={SHIMMER_COUNT} className="space-y-2" rowClassName="h-14 rounded-xl" />
         </div>
       )}
 
@@ -64,7 +67,7 @@ export default function Suggestions({
         </div>
       )}
 
-      {(status === 'success' || (status === 'loading' && suggestions.length > 0)) && (
+      {!isLoading && suggestions.length > 0 && (
         <ScrollArea className="turmeric-scroll max-h-72">
           <ul className="turmeric-options">
             {suggestions.map((suggestion, index) => {

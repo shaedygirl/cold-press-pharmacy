@@ -1,4 +1,5 @@
 import "./globals.css";
+import "@/styles/turmeric.css"; // adjust path to where turmeric.css lives
 
 export const metadata = {
   title: "Cold Press Clinic",

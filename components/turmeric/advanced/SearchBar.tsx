@@ -12,6 +12,7 @@ type SearchBarProps = {
   status: SearchStatus;
   isOpen: boolean;
   activeDescendantId?: string;
+  shouldPulse?: boolean;
   onValueChange: (value: string) => void;
   onFocus: () => void;
   onBlur: () => void;
@@ -28,6 +29,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       status,
       isOpen,
       activeDescendantId,
+      shouldPulse,
       onValueChange,
       onFocus,
       onBlur,
@@ -43,7 +45,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           ref={ref}
           id={id}
           type="search"
-          className="turmeric-input w-full rounded-2xl border bg-white px-4 py-3 text-base shadow-inner outline-none transition focus:-translate-y-0.5"
+          className={`turmeric-input w-full rounded-2xl border bg-white px-4 py-3 text-base shadow-inner outline-none transition focus:-translate-y-0.5 ${shouldPulse ? 'turmeric-input--pulse' : ''}`}
           placeholder="Search nutrients, compounds, or products…"
           value={value}
           autoComplete="off"

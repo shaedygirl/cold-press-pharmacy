@@ -9,16 +9,17 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
 } from 'react';
 import { Card } from '@/components/ui/card';
-//import SearchBar from '@/components/turmeric/advanced/SearchBar';
-import SearchBar from '../../../components/turmeric/advanced/SearchBar';
+import SearchBar from '@/components/turmeric/advanced/SearchBar';
 import Suggestions from '@/components/turmeric/advanced/Suggestions';
 import KbdHints from '@/components/turmeric/advanced/KbdHints';
+import ConnectionStatus from '@/components/turmeric/common/ConnectionStatus';
 import { searchTurmeric } from '@/lib/turmeric/client';
 import type { Suggestion, SearchStatus } from '@/lib/turmeric/types';
 import '@/styles/turmeric.css';
 
 const LISTBOX_ID = 'turmeric-suggestions';
 const PAGE_TITLE_ID = 'turmeric-search-title';
+const MIN_QUERY_LENGTH = 3;
 
 export default function TurmericSearchPage() {
   const [query, setQuery] = useState('');
@@ -26,12 +27,15 @@ export default function TurmericSearchPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [shouldPulse, setShouldPulse] = useState(false);
+  const showOverlay = isOpen;
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const trimmedQuery = query.trim();
   const hasResults = suggestions.length > 0;
   const showList =
     isOpen && (status === 'loading' || status === 'error' || hasResults || status === 'empty');
@@ -47,7 +51,9 @@ export default function TurmericSearchPage() {
 
   const runSearch = useCallback(
     async (searchTerm: string) => {
-      if (!searchTerm.trim()) {
+      const normalized = searchTerm.trim();
+
+      if (normalized.length < MIN_QUERY_LENGTH) {
         setStatus('idle');
         setSuggestions([]);
         setActiveIndex(-1);
@@ -61,7 +67,7 @@ export default function TurmericSearchPage() {
       const controller = resetController();
 
       try {
-        const items = await searchTurmeric(searchTerm, controller.signal);
+        const items = await searchTurmeric(normalized, controller.signal);
         if (controller.signal.aborted) return;
 
         if (items.length === 0) {
@@ -86,7 +92,18 @@ export default function TurmericSearchPage() {
   );
 
   useEffect(() => {
-    const handle = setTimeout(() => runSearch(query), 150);
+    const normalized = query.trim();
+
+    if (normalized.length < MIN_QUERY_LENGTH) {
+      abortRef.current?.abort();
+      setStatus('idle');
+      setSuggestions([]);
+      setActiveIndex(-1);
+      setErrorMessage(null);
+      return;
+    }
+
+    const handle = setTimeout(() => runSearch(normalized), 150);
 
     return () => {
       clearTimeout(handle);
@@ -113,9 +130,11 @@ export default function TurmericSearchPage() {
     }
     closeTimer.current = null;
     setIsOpen(true);
+    setShouldPulse(true);
   };
 
   const handleBlur = () => {
+    setShouldPulse(false);
     closeTimer.current = setTimeout(() => {
       setIsOpen(false);
       setActiveIndex(-1);
@@ -153,6 +172,7 @@ export default function TurmericSearchPage() {
     if (event.key === 'Escape') {
       event.preventDefault();
       setIsOpen(false);
+      setShouldPulse(false);
       inputRef.current?.blur();
     }
   };
@@ -162,6 +182,7 @@ export default function TurmericSearchPage() {
       window.open(suggestion.url, '_blank', 'noopener');
     }
     setIsOpen(false);
+    setShouldPulse(false);
   }, []);
 
   const handleSelect = useCallback(
@@ -180,9 +201,9 @@ export default function TurmericSearchPage() {
 
   return (
     <main className="relative isolate min-h-screen bg-turmeric-paper px-4 py-16">
-      <div className="h-3 bg-red-500" />
-      <div className={showList ? 'turmeric-overlay active' : 'turmeric-overlay'} aria-hidden />
-      <div className="mx-auto flex max-w-3xl flex-col items-center gap-6">
+      <ConnectionStatus />
+      <div className={showOverlay ? 'turmeric-overlay active' : 'turmeric-overlay'} aria-hidden />
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 turmeric-container">
         <h1 id={PAGE_TITLE_ID} className={`turmeric-title ${isOpen ? 'active' : ''}`}>
           Turmeric Search
         </h1>
@@ -202,6 +223,7 @@ export default function TurmericSearchPage() {
               status={status}
               isOpen={showList}
               activeDescendantId={activeDescendantId}
+              shouldPulse={shouldPulse}
             />
 
             <KbdHints />
@@ -211,6 +233,7 @@ export default function TurmericSearchPage() {
                 <Suggestions
                   id={LISTBOX_ID}
                   labelledBy={PAGE_TITLE_ID}
+                  showShimmer={status === 'loading' && trimmedQuery.length >= MIN_QUERY_LENGTH}
                   status={status}
                   suggestions={suggestions}
                   activeIndex={activeIndex}
