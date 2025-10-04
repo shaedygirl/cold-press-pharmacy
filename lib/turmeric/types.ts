@@ -1,6 +1,8 @@
 export type Suggestion = {
+  id?: string;
   title: string;
   meta?: string;
+  matchType?: string;
   url?: string;
 };
 

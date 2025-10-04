@@ -4,32 +4,32 @@ const MOCK_DATA: Suggestion[] = [
   {
     title: 'Curcumin Complex',
     meta: 'Nutrient • Anti-inflammatory • RDA: 200 mg',
-    url: 'https://example.com/curcumin',
+    url: 'https://localhost:3000/app/curcumin',
   },
   {
     title: 'Turmeric Latte Mix',
     meta: 'Product • SKU T-109',
-    url: 'https://example.com/latte',
+    url: 'https://localhost:3000/app/latte',
   },
   {
     title: 'Bioavailable Turmeric Capsules',
     meta: 'Product • 95% Curcuminoids',
-    url: 'https://example.com/capsules',
+    url: 'https://localhost:3000/app/capsules',
   },
   {
     title: 'Golden Paste Base',
     meta: 'Formula • Vet Approved',
-    url: 'https://example.com/golden-paste',
+    url: 'https://localhost:3000/app/golden-paste',
   },
   {
     title: 'Fresh Turmeric Root',
     meta: 'Inventory • Cold Storage Bay 3',
-    url: 'https://example.com/root',
+    url: 'https://localhost:3000/app/root',
   },
   {
     title: 'Curcumin Interaction Guide',
     meta: 'Documentation • Pharmacology',
-    url: 'https://example.com/guide',
+    url: 'https://localhost:3000/app/guide',
   },
 ];
 
