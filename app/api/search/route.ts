@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const TYPE_WHITELIST = new Set(['ingredient', 'drink', 'nutrient']);
+const TYPE_WHITELIST = new Set(['ingredient', 'drink', 'nutrient', 'all']);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

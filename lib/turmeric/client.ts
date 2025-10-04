@@ -9,6 +9,7 @@ type SearchResponse = {
 const MATCH_LABELS: Record<string, string> = {
   ingredient: 'Ingredient',
   drink: 'Drink',
+  nutrient: 'Nutrient',
   ingredient_with_nutrient: 'Ingredient (nutrient match)',
 };
 
@@ -19,7 +20,7 @@ export async function searchTurmeric(query: string, signal?: AbortSignal): Promi
     return [];
   }
 
-  const params = new URLSearchParams({ query: normalized });
+  const params = new URLSearchParams({ query: normalized, type: 'all' });
 
   let response: Response;
   try {

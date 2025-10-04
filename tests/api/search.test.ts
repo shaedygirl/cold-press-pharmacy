@@ -39,7 +39,7 @@ describe('GET /api/search', () => {
   it('rejects unsupported types', async () => {
     const response = await GET(new Request('http://localhost:3000/api/search?query=spinach&type=foo'));
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: 'Type must be one of ingredient, drink, nutrient' });
+    expect(await response.json()).toEqual({ error: 'Type must be one of ingredient, drink, nutrient, all' });
   });
 
   it('returns data from the RPC on success', async () => {
@@ -51,6 +51,15 @@ describe('GET /api/search', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([{ id: 1, name: 'Spinach', match_type: 'ingredient' }]);
     expect(rpc).toHaveBeenCalledWith('search_turmeric', { query: 'spinach', type: 'ingredient' });
+  });
+
+  it('calls the RPC with type=all when provided', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    vi.mocked(createClient).mockReturnValue({ rpc } as any);
+
+    await GET(new Request('http://localhost:3000/api/search?query=spinach&type=all'));
+
+    expect(rpc).toHaveBeenCalledWith('search_turmeric', { query: 'spinach', type: 'all' });
   });
 
   it('maps Supabase RPC errors to 502', async () => {
