@@ -6,5 +6,6 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx,js,jsx}'],
     globals: true,
     coverage: { reporter: ['text', 'html'] },
+    setupFiles: ['tests/setup/env.ts'],
   },
 })
